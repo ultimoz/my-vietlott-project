@@ -1,0 +1,45 @@
+name: Daily Vietlott Prediction AI
+
+# Trigger: Chạy vào 17:30 VN (10:30 UTC) mỗi Thứ 3, 5, 7 (ngày quay thưởng)
+# Hoặc chạy thủ công khi bạn bấm nút trên web Github
+on:
+  schedule:
+    - cron: '30 10 * * 2,4,6' 
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-predict:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Tải mã nguồn về máy ảo
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. Cài đặt Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    # 3. Cài đặt thư viện (Cache để chạy nhanh hơn lần sau)
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 4. Chạy mô hình AI
+    - name: Run Prediction Model
+      run: python scripts/predict.py
+
+    # 5. Commit và Push kết quả mới lên Github
+    - name: Commit and Push results
+      run: |
+        git config --global user.name 'Vietlott-AI-Bot'
+        git config --global user.email 'bot@vietlott-ai.com'
+        git add data/latest_prediction.json
+        git commit -m "🤖 AI Auto-Update: Prediction for $(date +'%Y-%m-%d')" || exit 0
+        git push
